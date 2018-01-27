@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace PonchoGameTest
 {
@@ -40,14 +39,17 @@ namespace PonchoGameTest
     {
         Dictionary<Color, Person[]> persons;
         Color goal;
+        bool finished = false;
         bool won = false;
+        int turns = 0;
         Dictionary<int, Color> colorTable;
         Dictionary<int, Accion> actionTable;
-        public Program(Dictionary<Color, Person[]> persons, Color goal, Dictionary<int, Color> colorTable, Dictionary<int, Accion> actionTable) {
+        public Program(Dictionary<Color, Person[]> persons, Color goal, Dictionary<int, Color> colorTable, Dictionary<int, Accion> actionTable, int turns) {
             this.persons = persons;
             this.goal = goal;
             this.colorTable = colorTable;
             this.actionTable = actionTable;
+            this.turns = turns;
         }
 
         // No uso el nombre Action por que es parte del framework de .NET
@@ -112,13 +114,19 @@ namespace PonchoGameTest
             return new Choice() { hat = hat, poncho = poncho, accion = accion };
         }
 
-        void CheckWinCondition() {
+        void CheckFinishCondition() {
             if (persons.All(pair =>
                     pair.Value.All(person => person.color == goal)))
             {
+                finished = true;
                 won = true;
             }
 
+            if (--turns <= 0) {
+                turns = 0;
+                finished = true;
+                won = false;
+            }
         }
 
         void Eval(Choice choice) {
@@ -154,7 +162,7 @@ namespace PonchoGameTest
                 }
             }
 
-            CheckWinCondition();
+            CheckFinishCondition();
         }
 
         void Print(Dictionary<Color, Person[]> persons) {
@@ -167,13 +175,15 @@ namespace PonchoGameTest
             }
             Console.WriteLine();
             Console.WriteLine("Su objetivo es tener todos los ponchos de color {0}", goal.ToString().ToLower());
-            if (won) Console.WriteLine("Ganó");
+            Console.WriteLine("Quedan {0} turnos", turns);
+            if (finished && won) Console.WriteLine("Ganó");
+            if (finished && !won) Console.WriteLine("Perdió");
         }
 
         void Run() {
             Print(persons);
 
-            while (! won)
+            while (! finished)
             {
                 var choice = Read();
 
@@ -190,7 +200,7 @@ namespace PonchoGameTest
         {
             int personsPerRow = 3;
             bool scramble = true;
-
+            int turns = 10;
 
             var persons = new Dictionary<Color, Person[]>();
             var nonWhiteColors = new List<Color>((Color[])Enum.GetValues(typeof(Color))).Where(color => color != Color.Blanco).ToList();
@@ -223,7 +233,7 @@ namespace PonchoGameTest
                 actionTable.Scramble();
             }
 
-            new Program(persons, goal, colorTable, actionTable).Run();
+            new Program(persons, goal, colorTable, actionTable, turns).Run();
         }
     }
 }
